@@ -179,12 +179,11 @@ Con transfer learning (ResNet18 preentrenada) sobre 463 imágenes y 20 épocas:
 - [x] Entrenamiento y evaluación del modelo
 - [x] Backend de predicción
 - [x] Interfaz web (imagen + cámara en vivo)
-- [ ] Manual de usuario (`docs/`)
+- [x] Manual de usuario (`docs/`)
 - [ ] Pulido final y documentación
 
 ---
 
 ## 📄 Licencia
 
-Este proyecto se distribuye con fines académicos. Consúltese el equipo antes de
-reutilizar el código fuera del ámbito educativo.
+Distribuido bajo la licencia **MIT**. Consulta el archivo [LICENSE](LICENSE).
