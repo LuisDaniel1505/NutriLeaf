@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NutriLeaf — Deficiencias en hojas de maíz</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="brand">
+        <span class="logo">🌽</span>
+        <h1>Nutri<span>Leaf</span></h1>
+      </div>
+      <p class="tagline">Identificación de deficiencias nutricionales en la planta de maíz</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <nav class="tabs" role="tablist">
+      <button class="tab active" id="tab-image" role="tab" aria-selected="true">📷 Analizar imagen</button>
+      <button class="tab" id="tab-camera" role="tab" aria-selected="false">🎥 Cámara en vivo</button>
+    </nav>
+
+    <!-- ===================== PESTAÑA IMAGEN ===================== -->
+    <section class="panel active" id="panel-image" role="tabpanel">
+      <div class="card">
+        <h2>Sube una fotografía de la hoja</h2>
+        <div class="dropzone" id="dropzone">
+          <input type="file" id="file-input" accept="image/*" hidden />
+          <div class="dropzone-inner">
+            <span class="dropzone-icon">🖼️</span>
+            <p>Arrastra una imagen aquí o <strong>haz clic para seleccionar</strong></p>
+            <small>Formatos soportados: JPG, PNG, JPEG</small>
+          </div>
+        </div>
+
+        <div class="preview hidden" id="preview-wrap">
+          <img id="preview" alt="Vista previa de la hoja" />
+          <button class="btn primary" id="btn-analyze">🔍 Analizar hoja</button>
+        </div>
+
+        <div class="loading hidden" id="loading-image">
+          <div class="spinner"></div>
+          <span>Analizando imagen…</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== PESTAÑA CÁMARA ===================== -->
+    <section class="panel" id="panel-camera" role="tabpanel">
+      <div class="card">
+        <h2>Analiza en tiempo real con tu cámara</h2>
+        <div class="camera-box">
+          <video id="video" autoplay playsinline muted></video>
+          <canvas id="canvas" hidden></canvas>
+          <div class="camera-overlay hidden" id="camera-overlay"></div>
+        </div>
+        <div class="camera-controls">
+          <button class="btn primary" id="btn-camera">▶ Iniciar cámara</button>
+          <span class="hint hidden" id="camera-hint">Enfoca una hoja de maíz para analizarla</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== RESULTADO ===================== -->
+    <section class="result hidden" id="result">
+      <div class="result-card" id="result-card">
+        <div class="result-top">
+          <span class="result-icon" id="result-icon">✅</span>
+          <div>
+            <h3 id="result-label">—</h3>
+            <p class="result-short" id="result-short">—</p>
+          </div>
+        </div>
+
+        <div class="confidence">
+          <div class="confidence-head">
+            <span>Confianza</span>
+            <span id="result-confidence">0%</span>
+          </div>
+          <div class="confidence-bar">
+            <div class="confidence-fill" id="confidence-fill"></div>
+          </div>
+        </div>
+
+        <div class="probs" id="probs"></div>
+
+        <div class="recommendation">
+          <h4>💡 Recomendación</h4>
+          <p id="rec-detail"></p>
+          <ul id="rec-actions"></ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>NutriLeaf · Proyecto de Inteligencia Artificial · Identificación de deficiencias en el maíz</p>
+  </footer>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

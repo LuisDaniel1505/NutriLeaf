@@ -1,0 +1,29 @@
+# ============================================================
+# NutriLeaf - Dependencias del proyecto
+# Framework de deep learning: PyTorch (GPU nativa en Windows)
+# ============================================================
+
+# ---- Deep learning ----
+# En Windows, "pip install torch torchvision" instala la build con CUDA
+torch>=2.4
+torchvision>=0.19
+
+# ---- Backend web ----
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9
+
+# ---- Imagen / video ----
+pillow>=10.0
+opencv-python>=4.9
+numpy>=1.26
+
+# ---- Datos / métricas ----
+scikit-learn>=1.5
+imbalanced-learn>=0.12
+matplotlib>=3.8
+seaborn>=0.13
+pandas>=2.0
+
+# ---- Utilidades ----
+tqdm>=4.66
