@@ -257,7 +257,8 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--input-size", type=int, default=224)
-    parser.add_argument("--num-workers", type=int, default=2)
+    parser.add_argument("--num-workers", type=int, default=0,
+                        help="Hilos de carga de datos (0 evita problemas de spawn en Windows)")
     parser.add_argument("--device", type=str, default=None, help="'cuda' o 'cpu'")
     args = parser.parse_args()
 
