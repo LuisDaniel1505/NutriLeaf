@@ -17,7 +17,7 @@ from pathlib import Path
 
 from sklearn.model_selection import train_test_split
 
-from app.config import DATASETS_DIR, PROCESSED_DIR, RAW_DIR
+from app.config import DATA_DIR, DATASETS_DIR, PROCESSED_DIR, RAW_DIR
 from app.labels import CLASS_NAMES, DATASET_FOLDER_MAP
 
 IMG_EXTS = {".jpg", ".jpeg", ".png", ".bmp"}
