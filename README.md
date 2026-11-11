@@ -159,13 +159,26 @@ Abre <http://localhost:8000> en tu navegador.
 
 ---
 
+## 📈 Resultados del modelo
+
+Con transfer learning (ResNet18 preentrenada) sobre 463 imágenes y 20 épocas:
+
+| Métrica | Valor |
+| --- | --- |
+| Exactitud en validación | 95.8 % |
+| Exactitud en test | **87.3 %** |
+| F1 (macro) | 0.86 |
+
+> La clase con menor rendimiento es **Potasio** (F1 0.71), por ser la que tiene
+> menos imágenes en el dataset (56) y por confundirse con Magnesio (síntomas similares).
+
 ## 🗺️ Hoja de ruta
 
 - [x] Estructura del proyecto y control de versiones
-- [ ] Preparación del dataset
-- [ ] Entrenamiento y evaluación del modelo
-- [ ] Backend de predicción
-- [ ] Interfaz web (imagen + cámara en vivo)
+- [x] Preparación del dataset
+- [x] Entrenamiento y evaluación del modelo
+- [x] Backend de predicción
+- [x] Interfaz web (imagen + cámara en vivo)
 - [ ] Manual de usuario (`docs/`)
 - [ ] Pulido final y documentación
 

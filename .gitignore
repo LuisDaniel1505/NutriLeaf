@@ -52,4 +52,5 @@ Thumbs.db
 
 # ===== Logs y entorno =====
 *.log
+*_log.txt
 .env
