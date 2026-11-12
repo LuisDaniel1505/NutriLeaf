@@ -12,8 +12,8 @@ import base64
 import io
 from typing import Optional
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from PIL import Image
 from pydantic import BaseModel
@@ -26,6 +26,16 @@ app = FastAPI(
     description="Identificación de deficiencias nutricionales en hojas de maíz.",
     version="0.1.0",
 )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Devuelve un error 500 limpio en lugar de exponer un traceback al cliente."""
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Error interno del servidor. Revisa los logs para más información."},
+    )
+
 
 # El clasificador se carga de forma perezosa (la primera vez que se usa).
 _classifier: Optional[LeafClassifier] = None
@@ -58,7 +68,10 @@ def health() -> dict:
 async def predict(file: UploadFile = File(...)) -> dict:
     """Predice la deficiencia a partir de una imagen subida (multipart/form-data)."""
     _ensure_model()
-    image = _read_image(await file.read())
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="El archivo subido está vacío.")
+    image = _read_image(data)
     return get_classifier().predict(image)
 
 
@@ -82,7 +95,10 @@ def _read_image(data: bytes) -> Image.Image:
     try:
         return Image.open(io.BytesIO(data)).convert("RGB")
     except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=400, detail="No se pudo leer la imagen.") from exc
+        raise HTTPException(
+            status_code=400,
+            detail="No se pudo leer la imagen. Verifica que sea un archivo JPG o PNG válido.",
+        ) from exc
 
 
 def _decode_frame(data: str) -> Image.Image:

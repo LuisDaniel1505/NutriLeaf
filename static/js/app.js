@@ -72,6 +72,10 @@ dropzone.addEventListener("drop", (e) => {
 });
 
 function showPreview(file) {
+  if (!file.type.startsWith("image/")) {
+    renderError("El archivo seleccionado no es una imagen. Usa JPG o PNG.");
+    return;
+  }
   const reader = new FileReader();
   reader.onload = (e) => {
     previewImg.src = e.target.result;
@@ -94,6 +98,9 @@ btnAnalyze.addEventListener("click", async () => {
     form.append("file", file);
     const res = await fetch("/predict", { method: "POST", body: form });
     const data = await res.json();
+    if (res.status === 503) {
+      throw new Error("El modelo aún no está entrenado. Ejecuta el entrenamiento antes de usar la aplicación.");
+    }
     if (!res.ok) throw new Error(data.detail || "Error al analizar la imagen");
     renderResult(data);
   } catch (err) {
@@ -124,9 +131,22 @@ btnCamera.addEventListener("click", async () => {
     btnCamera.textContent = "⏹ Detener cámara";
     startFrameLoop();
   } catch (err) {
-    renderError("No se pudo acceder a la cámara: " + err.message);
+    renderError(cameraErrorMessage(err));
   }
 });
+
+function cameraErrorMessage(err) {
+  if (err.name === "NotAllowedError" || err.name === "SecurityError") {
+    return "Permiso de cámara denegado. Activa el acceso a la cámara en la configuración del navegador.";
+  }
+  if (err.name === "NotFoundError" || err.name === "OverconstrainedError") {
+    return "No se encontró una cámara disponible en este dispositivo.";
+  }
+  if (err.name === "NotReadableError") {
+    return "La cámara está siendo utilizada por otra aplicación.";
+  }
+  return "No se pudo acceder a la cámara: " + err.message;
+}
 
 function stopCamera() {
   if (stream) {
@@ -183,6 +203,7 @@ function renderResult(data) {
   const icon = CLASS_ICONS[data.class] || "🌿";
   const pct = Math.round(data.confidence * 100);
 
+  resultCard.style.borderLeftColor = "var(--green-500)";
   document.getElementById("result-icon").textContent = icon;
   document.getElementById("result-label").textContent = data.label_es;
   document.getElementById("result-short").textContent =
