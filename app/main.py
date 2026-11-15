@@ -37,6 +37,19 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
     )
 
 
+@app.middleware("http")
+async def no_cache_static(request: Request, call_next):
+    """Evita que el navegador cachee los archivos estáticos (CSS/JS).
+
+    Así, al actualizar el frontend, el navegador siempre descarga la versión
+    más reciente en lugar de usar una copia obsoleta.
+    """
+    response = await call_next(request)
+    if request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
+
+
 # El clasificador se carga de forma perezosa (la primera vez que se usa).
 _classifier: Optional[LeafClassifier] = None
 
