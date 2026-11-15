@@ -167,8 +167,8 @@ imágenes y 20 épocas:
 | Métrica | Valor |
 | --- | --- |
 | Exactitud en validación | 97.2 % |
-| Exactitud en test | **90.1 %** |
-| F1 (macro) | 0.89 |
+| Exactitud en test | **93.0 %** |
+| F1 (macro) | 0.92 |
 
 > Consulta la comparativa completa en [docs/experimentos.md](docs/experimentos.md).
 > La clase con menor rendimiento es **Potasio** (F1 0.75), por tener menos imágenes

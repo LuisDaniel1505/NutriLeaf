@@ -41,8 +41,25 @@
    Potasio (0.86), pero a costa de empeorar otras clases (healthy 0.82 recall,
    nitrogen 0.80), por lo que su exactitud global fue menor (88.73 %).
 
-3. **Modelo elegido: ResNet18 + pesos por clase** (exactitud de test 90.14 %).
-   Se guarda como el modelo definitivo en `models/leaf_classifier.pt`.
+3. **Modelo elegido: ResNet18 + pesos por clase** (exactitud de test 92.96 %
+   en el re-entrenamiento final). Se guarda como el modelo definitivo en
+   `models/leaf_classifier.pt`.
+
+## Experimento adicional: datos externos (MPLD)
+
+Se probó añadir el dataset *Maize Phosphorus Leaf Deficiency* (MPLD, Zenodo,
+CC BY 4.0) para reforzar la clase de fósforo. Resultado:
+
+| Configuración | Test acc | Observación |
+| --- | --- | --- |
+| Base (5 clases) | 0.9014 | — |
+| Base + MPLD | 0.8732 | **Empeoró** e introdujo confusión fósforo→nitrógeno |
+
+**Conclusión:** el dataset MPLD (hojas sobre fondo blanco de laboratorio) es un
+dominio muy distinto a las fotos de campo, por lo que **perjudica** la
+generalización. Se descartó y se mantuvo el dataset base. Para mejorar la
+confusión N↔P en fotos reales conviene más **datos de campo** (p. ej. el
+dataset de Mendeley) o fotos propias del usuario.
 
 ## Cómo reproducir los experimentos
 
