@@ -1,19 +1,23 @@
 // ============================================================
-// NutriLeaf — Lógica del frontend
-// Dos modos: análisis de imagen subida y cámara en vivo.
+// NutriLeaf — Lógica del frontend (3 pestañas)
+// Inicio · Analizar imagen · Cámara en vivo
 // ============================================================
 
-const CLASS_ICONS = {
-  healthy: "✅",
-  nitrogen: "🟡",
-  phosphorus: "🟣",
-  potassium: "🟠",
-  magnesium: "🟢",
+// Metadatos visuales por clase (símbolo químico + color + descripción).
+// Se usan símbolos y colores en lugar de emojis para un aspecto más cuidado.
+const CLASS_META = {
+  healthy:    { symbol: "OK", badge: "bg-leaf-500",    name: "Saludable",  symptom: "Hojas sin señales visibles" },
+  nitrogen:   { symbol: "N",  badge: "bg-yellow-500",  name: "Nitrógeno",  symptom: "Amarillamiento en forma de V" },
+  phosphorus: { symbol: "P",  badge: "bg-purple-500",  name: "Fósforo",    symptom: "Tonos morados o rojizos" },
+  potassium:  { symbol: "K",  badge: "bg-orange-500",  name: "Potasio",    symptom: "Bordes secos y amarillos" },
+  magnesium:  { symbol: "Mg", badge: "bg-emerald-400", name: "Magnesio",   symptom: "Amarillo entre nervaduras" },
 };
 
 // ---------- Referencias al DOM ----------
+const tabHome = document.getElementById("tab-home");
 const tabImage = document.getElementById("tab-image");
 const tabCamera = document.getElementById("tab-camera");
+const panelHome = document.getElementById("panel-home");
 const panelImage = document.getElementById("panel-image");
 const panelCamera = document.getElementById("panel-camera");
 
@@ -34,19 +38,50 @@ const result = document.getElementById("result");
 const resultCard = document.getElementById("result-card");
 
 // ---------- Pestañas ----------
-function switchTab(active) {
-  const imageActive = active === "image";
-  tabImage.classList.toggle("active", imageActive);
-  tabCamera.classList.toggle("active", !imageActive);
-  panelImage.classList.toggle("active", imageActive);
-  panelCamera.classList.toggle("active", !imageActive);
+const TAB_BASE = "px-5 py-2 rounded-full text-sm font-semibold transition-colors";
+const TAB_ACTIVE = "bg-leaf-700 text-white shadow";
+const TAB_INACTIVE = "text-leaf-700 hover:text-leaf-900";
+
+function setActiveTab(active) {
+  const tabs = { home: tabHome, image: tabImage, camera: tabCamera };
+  const panels = { home: panelHome, image: panelImage, camera: panelCamera };
+
+  for (const key of Object.keys(tabs)) {
+    const isActive = key === active;
+    tabs[key].className = `${TAB_BASE} ${isActive ? TAB_ACTIVE : TAB_INACTIVE}`;
+    tabs[key].setAttribute("aria-selected", String(isActive));
+    panels[key].classList.toggle("hidden", !isActive);
+  }
+
+  // Al salir de la cámara, se detiene la captura.
+  if (active !== "camera") stopCamera();
 }
 
-tabImage.addEventListener("click", () => {
-  switchTab("image");
-  stopCamera();
+tabHome.addEventListener("click", () => setActiveTab("home"));
+tabImage.addEventListener("click", () => setActiveTab("image"));
+tabCamera.addEventListener("click", () => setActiveTab("camera"));
+
+document.getElementById("btn-cta-start").addEventListener("click", () => setActiveTab("image"));
+document.getElementById("brand").addEventListener("click", (e) => {
+  e.preventDefault();
+  setActiveTab("home");
 });
-tabCamera.addEventListener("click", () => switchTab("camera"));
+
+// ---------- Tarjetas de la página de inicio ----------
+function renderHomeClasses() {
+  const wrap = document.getElementById("home-classes");
+  wrap.innerHTML = "";
+  for (const meta of Object.values(CLASS_META)) {
+    const card = document.createElement("div");
+    card.className = "bg-white rounded-2xl p-4 border border-leaf-100 shadow-sm text-center";
+    card.innerHTML = `
+      <span class="inline-flex items-center justify-center w-11 h-11 rounded-xl ${meta.badge} text-white font-bold text-sm">${meta.symbol}</span>
+      <div class="font-semibold text-leaf-900 mt-3">${meta.name}</div>
+      <div class="text-xs text-leaf-700/60 mt-1">${meta.symptom}</div>
+    `;
+    wrap.appendChild(card);
+  }
+}
 
 // ---------- Selección de imagen ----------
 dropzone.addEventListener("click", () => fileInput.click());
@@ -57,13 +92,13 @@ fileInput.addEventListener("change", (e) => {
 ["dragover", "dragenter"].forEach((evt) =>
   dropzone.addEventListener(evt, (e) => {
     e.preventDefault();
-    dropzone.classList.add("dragover");
+    dropzone.classList.add("border-leaf-500", "bg-leaf-50");
   })
 );
 ["dragleave", "drop"].forEach((evt) =>
   dropzone.addEventListener(evt, (e) => {
     e.preventDefault();
-    dropzone.classList.remove("dragover");
+    dropzone.classList.remove("border-leaf-500", "bg-leaf-50");
   })
 );
 dropzone.addEventListener("drop", (e) => {
@@ -85,7 +120,7 @@ function showPreview(file) {
   reader.readAsDataURL(file);
 }
 
-// ---------- Análisis de imagen subida ----------
+// ---------- Análisis de imagen ----------
 btnAnalyze.addEventListener("click", async () => {
   const file = fileInput.files[0];
   if (!file) return;
@@ -128,12 +163,26 @@ btnCamera.addEventListener("click", async () => {
     video.srcObject = stream;
     cameraHint.classList.remove("hidden");
     cameraOverlay.classList.remove("hidden");
-    btnCamera.textContent = "⏹ Detener cámara";
+    btnCamera.textContent = "Detener cámara";
     startFrameLoop();
   } catch (err) {
     renderError(cameraErrorMessage(err));
   }
 });
+
+function stopCamera() {
+  if (stream) {
+    stream.getTracks().forEach((t) => t.stop());
+    stream = null;
+  }
+  if (frameTimer) {
+    clearInterval(frameTimer);
+    frameTimer = null;
+  }
+  btnCamera.textContent = "Iniciar cámara";
+  cameraHint.classList.add("hidden");
+  cameraOverlay.classList.add("hidden");
+}
 
 function cameraErrorMessage(err) {
   if (err.name === "NotAllowedError" || err.name === "SecurityError") {
@@ -148,26 +197,11 @@ function cameraErrorMessage(err) {
   return "No se pudo acceder a la cámara: " + err.message;
 }
 
-function stopCamera() {
-  if (stream) {
-    stream.getTracks().forEach((t) => t.stop());
-    stream = null;
-  }
-  if (frameTimer) {
-    clearInterval(frameTimer);
-    frameTimer = null;
-  }
-  btnCamera.textContent = "▶ Iniciar cámara";
-  cameraHint.classList.add("hidden");
-  cameraOverlay.classList.add("hidden");
-}
-
 function startFrameLoop() {
   const ctx = canvas.getContext("2d");
   // Envía un frame cada ~600 ms para analizar en tiempo real.
   frameTimer = setInterval(async () => {
     if (!stream) return;
-    // Dibuja el frame actual en el canvas y lo codifica a JPEG base64.
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -190,47 +224,56 @@ function startFrameLoop() {
 }
 
 function renderCameraOverlay(data) {
-  const icon = CLASS_ICONS[data.class] || "🌿";
+  const meta = CLASS_META[data.class] || { symbol: "?", badge: "bg-leaf-500" };
   cameraOverlay.innerHTML = `
-    <span style="font-size:38px">${icon}</span>
-    <strong>${data.label_es}</strong>
-    <span>${Math.round(data.confidence * 100)}% de confianza</span>
+    <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl ${meta.badge} text-white font-bold mb-2">${meta.symbol}</span>
+    <strong class="text-lg">${data.label_es}</strong>
+    <span class="text-white/80 text-sm">${Math.round(data.confidence * 100)}% de confianza</span>
   `;
 }
 
 // ---------- Renderizado del resultado ----------
+const RESULT_BASE = "bg-white rounded-3xl border border-l-4 shadow-lg shadow-leaf-900/5 p-6 sm:p-8";
+
 function renderResult(data) {
-  const icon = CLASS_ICONS[data.class] || "🌿";
+  const meta = CLASS_META[data.class] || { symbol: "?", badge: "bg-leaf-500" };
   const pct = Math.round(data.confidence * 100);
 
-  resultCard.style.borderLeftColor = "var(--green-500)";
-  document.getElementById("result-icon").textContent = icon;
-  document.getElementById("result-label").textContent = data.label_es;
-  document.getElementById("result-short").textContent =
-    data.recommendation.short || "";
+  resultCard.className = `${RESULT_BASE} border-leaf-100 border-l-leaf-500`;
 
+  const iconEl = document.getElementById("result-icon");
+  iconEl.className = `w-14 h-14 rounded-2xl flex items-center justify-center text-white text-lg font-bold shrink-0 ${meta.badge}`;
+  iconEl.textContent = meta.symbol;
+
+  document.getElementById("result-label").textContent = data.label_es;
+  document.getElementById("result-short").textContent = data.recommendation.short || "";
   document.getElementById("result-confidence").textContent = pct + "%";
   document.getElementById("confidence-fill").style.width = pct + "%";
 
-  // Barras de probabilidad por clase.
+  // Chips con la probabilidad de cada clase.
   const probsEl = document.getElementById("probs");
   probsEl.innerHTML = "";
   const sorted = Object.entries(data.probabilities).sort((a, b) => b[1] - a[1]);
   sorted.forEach(([cls, p]) => {
+    const m = CLASS_META[cls] || { badge: "bg-leaf-500", name: cls };
     const chip = document.createElement("span");
-    chip.className = "prob-chip" + (cls === data.class ? " top" : "");
-    chip.textContent = `${CLASS_ICONS[cls] || ""} ${formatClass(cls)} ${Math.round(p * 100)}%`;
+    chip.className =
+      "inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full " +
+      (cls === data.class
+        ? "bg-leaf-100 text-leaf-800"
+        : "bg-cream text-leaf-700/70 border border-leaf-100");
+    chip.innerHTML = `<span class="w-2 h-2 rounded-full ${m.badge}"></span> ${m.name} ${Math.round(p * 100)}%`;
     probsEl.appendChild(chip);
   });
 
   // Recomendación.
-  document.getElementById("rec-detail").textContent =
-    data.recommendation.detail || "";
+  document.getElementById("rec-detail").textContent = data.recommendation.detail || "";
   const actionsEl = document.getElementById("rec-actions");
   actionsEl.innerHTML = "";
   (data.recommendation.actions || []).forEach((a) => {
     const li = document.createElement("li");
-    li.textContent = a;
+    li.className = "flex gap-2 text-leaf-800";
+    li.innerHTML = `<span class="text-leaf-500">•</span><span>${a}</span>`;
     actionsEl.appendChild(li);
   });
 
@@ -239,18 +282,22 @@ function renderResult(data) {
 
 function renderError(msg) {
   result.classList.remove("hidden");
-  resultCard.style.borderLeftColor = "var(--danger)";
-  document.getElementById("result-icon").textContent = "⚠️";
-  document.getElementById("result-label").textContent = "Error";
+  resultCard.className = `${RESULT_BASE} border-red-200 border-l-red-500`;
+
+  const iconEl = document.getElementById("result-icon");
+  iconEl.className =
+    "w-14 h-14 rounded-2xl flex items-center justify-center text-white text-lg font-bold shrink-0 bg-red-500";
+  iconEl.textContent = "!";
+
+  document.getElementById("result-label").textContent = "Algo salió mal";
   document.getElementById("result-short").textContent = msg;
   document.getElementById("result-confidence").textContent = "—";
   document.getElementById("confidence-fill").style.width = "0%";
   document.getElementById("probs").innerHTML = "";
-  document.getElementById("rec-detail").textContent =
-    "Revisa la consola o el servidor para más detalles.";
+  document.getElementById("rec-detail").textContent = "Revisa la imagen e inténtalo de nuevo.";
   document.getElementById("rec-actions").innerHTML = "";
 }
 
-function formatClass(cls) {
-  return cls.charAt(0).toUpperCase() + cls.slice(1);
-}
+// ---------- Inicialización ----------
+renderHomeClasses();
+setActiveTab("home");
