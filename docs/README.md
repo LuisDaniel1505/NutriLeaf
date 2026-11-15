@@ -9,8 +9,5 @@ En esta carpeta se almacena la documentación del proyecto.
   problemas.
 - **[Proceso de creación](proceso_de_creacion.md)** — guía paso a paso de cómo se
   creó el proyecto, las decisiones de arquitectura y cómo funciona el entrenamiento.
-
-## Próximos documentos
-
-- **Documentación de experimentos** (`experimentos.md`) — comparativa de
-  arquitecturas y métricas del modelo (fase de mejora del modelo).
+- **[Experimentos](experimentos.md)** — comparativa de arquitecturas y métricas
+  del modelo (ResNet18 vs EfficientNet-B0, pesos por clase).

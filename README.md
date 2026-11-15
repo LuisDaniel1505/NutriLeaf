@@ -161,16 +161,18 @@ Abre <http://localhost:8000> en tu navegador.
 
 ## 📈 Resultados del modelo
 
-Con transfer learning (ResNet18 preentrenada) sobre 463 imágenes y 20 épocas:
+Con transfer learning (**ResNet18** preentrenada) + **pesos por clase**, sobre 463
+imágenes y 20 épocas:
 
 | Métrica | Valor |
 | --- | --- |
-| Exactitud en validación | 95.8 % |
-| Exactitud en test | **87.3 %** |
-| F1 (macro) | 0.86 |
+| Exactitud en validación | 97.2 % |
+| Exactitud en test | **90.1 %** |
+| F1 (macro) | 0.89 |
 
-> La clase con menor rendimiento es **Potasio** (F1 0.71), por ser la que tiene
-> menos imágenes en el dataset (56) y por confundirse con Magnesio (síntomas similares).
+> Consulta la comparativa completa en [docs/experimentos.md](docs/experimentos.md).
+> La clase con menor rendimiento es **Potasio** (F1 0.75), por tener menos imágenes
+> en el dataset (56) y confundirse con Magnesio (síntomas similares).
 
 ## 🗺️ Hoja de ruta
 
