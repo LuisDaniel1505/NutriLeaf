@@ -82,13 +82,14 @@ def build_transforms(input_size: int = 224) -> tuple[transforms.Compose, transfo
 
 def build_dataloaders(
     batch_size: int, input_size: int, num_workers: int
-) -> tuple[DataLoader, DataLoader, DataLoader, list[str]]:
-    """Construye los DataLoaders de train/val/test y devuelve los nombres de clase.
+) -> tuple[DataLoader, DataLoader, DataLoader, list[str], torch.Tensor]:
+    """Construye los DataLoaders de train/val/test y devuelve clases y pesos.
 
     Devuelve
     --------
-    (train_loader, val_loader, test_loader, class_names)
-        ``class_names`` son las etiquetas en el orden que espera el modelo.
+    (train_loader, val_loader, test_loader, class_names, class_weights)
+        ``class_names`` son las etiquetas en el orden que espera el modelo y
+        ``class_weights`` los pesos por clase para compensar el desbalanceo.
     """
     train_transform, eval_transform = build_transforms(input_size)
 
@@ -97,6 +98,7 @@ def build_dataloaders(
     test_set = datasets.ImageFolder(str(PROCESSED_DIR / "test"), transform=eval_transform)
 
     class_names = train_set.classes
+    class_weights = _compute_class_weights(train_set)
 
     # Balanceo de clases: el dataset original tiene clases desbalanceadas.
     train_loader = DataLoader(
@@ -108,7 +110,7 @@ def build_dataloaders(
     val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False, num_workers=num_workers)
     test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
-    return train_loader, val_loader, test_loader, class_names
+    return train_loader, val_loader, test_loader, class_names, class_weights
 
 
 def _make_balanced_sampler(dataset: datasets.ImageFolder) -> WeightedRandomSampler:
@@ -122,6 +124,19 @@ def _make_balanced_sampler(dataset: datasets.ImageFolder) -> WeightedRandomSampl
     class_counts = np.bincount(targets)
     weights = 1.0 / class_counts[targets]
     return WeightedRandomSampler(weights, num_samples=len(weights), replacement=True)
+
+
+def _compute_class_weights(dataset: datasets.ImageFolder) -> torch.Tensor:
+    """Calcula pesos por clase inversamente proporcionales a su frecuencia.
+
+    Las clases con menos imágenes reciben un peso mayor en la pérdida, de modo
+    que el modelo no las ignore. Se normalizan para que su media sea 1.
+    """
+    targets = np.array(dataset.targets)
+    class_counts = np.bincount(targets)
+    weights = 1.0 / class_counts.astype(np.float32)
+    weights /= weights.mean()  # media = 1
+    return torch.tensor(weights, dtype=torch.float32)
 
 
 # --------------------------------------------------------------------------- #
@@ -260,6 +275,10 @@ def main() -> None:
     parser.add_argument("--num-workers", type=int, default=0,
                         help="Hilos de carga de datos (0 evita problemas de spawn en Windows)")
     parser.add_argument("--device", type=str, default=None, help="'cuda' o 'cpu'")
+    parser.add_argument("--no-class-weights", action="store_true",
+                        help="Desactiva los pesos por clase en la función de pérdida")
+    parser.add_argument("--output", type=Path, default=None,
+                        help="Ruta del archivo de salida (por defecto models/leaf_classifier.pt)")
     args = parser.parse_args()
 
     # ---- Dispositivo de cómputo ----
@@ -269,7 +288,7 @@ def main() -> None:
         print(f"[info] GPU: {torch.cuda.get_device_name(0)}")
 
     # ---- Datos ----
-    train_loader, val_loader, test_loader, class_names = build_dataloaders(
+    train_loader, val_loader, test_loader, class_names, class_weights = build_dataloaders(
         batch_size=args.batch_size,
         input_size=args.input_size,
         num_workers=args.num_workers,
@@ -278,7 +297,11 @@ def main() -> None:
 
     # ---- Modelo, loss y optimizador ----
     model = build_model(num_classes=len(class_names), arch=args.arch, pretrained=True).to(device)
-    criterion = nn.CrossEntropyLoss()
+    # Los pesos por clase compensan el desbalanceo (Potasio tiene menos imágenes).
+    loss_weight = None if args.no_class_weights else class_weights.to(device)
+    if loss_weight is not None:
+        print(f"[info] Pesos por clase en la pérdida: {loss_weight.cpu().numpy().round(2)}")
+    criterion = nn.CrossEntropyLoss(weight=loss_weight)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
     # ---- Bucle de entrenamiento ----
@@ -341,7 +364,7 @@ def main() -> None:
         input_size=args.input_size,
         history=history,
         metrics=metrics,
-        output_path=MODELS_DIR / "leaf_classifier.pt",
+        output_path=args.output or (MODELS_DIR / "leaf_classifier.pt"),
     )
 
     print("\n[ok] Entrenamiento finalizado.")
