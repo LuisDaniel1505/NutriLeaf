@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 import time
 from pathlib import Path
 
@@ -279,7 +280,16 @@ def main() -> None:
                         help="Desactiva los pesos por clase en la función de pérdida")
     parser.add_argument("--output", type=Path, default=None,
                         help="Ruta del archivo de salida (por defecto models/leaf_classifier.pt)")
+    parser.add_argument("--seed", type=int, default=42,
+                        help="Semilla para reproducibilidad del entrenamiento")
     args = parser.parse_args()
+
+    # ---- Reproducibilidad ----
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(args.seed)
 
     # ---- Dispositivo de cómputo ----
     device = torch.device(args.device or ("cuda" if torch.cuda.is_available() else "cpu"))
