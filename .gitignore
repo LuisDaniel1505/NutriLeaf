@@ -53,6 +53,9 @@ Datasets/
 .DS_Store
 Thumbs.db
 
+# ===== Node / Tailwind =====
+node_modules/
+
 # ===== Logs y entorno =====
 *.log
 *_log.txt

@@ -1,0 +1,14 @@
+{
+  "name": "nutrileaf",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Frontend de NutriLeaf con Tailwind CSS",
+  "scripts": {
+    "build:css": "tailwindcss -i ./src/input.css -o ./static/css/style.css --minify",
+    "watch:css": "tailwindcss -i ./src/input.css -o ./static/css/style.css --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.0",
+    "tailwindcss": "^4.1.0"
+  }
+}

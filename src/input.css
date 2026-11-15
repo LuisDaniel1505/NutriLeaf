@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+/* ============================================================
+   NutriLeaf — Tema de diseño (Tailwind CSS v4)
+   Dirección: "fresco y limpio" · esmeralda + ámbar
+   Tipografías: Fraunces (títulos) + Inter (texto)
+   ============================================================ */
+
+@theme {
+  /* Verde esmeralda (tema principal) */
+  --color-leaf-50:  #eef7f1;
+  --color-leaf-100: #d7eee0;
+  --color-leaf-200: #b2ddc4;
+  --color-leaf-300: #83c5a0;
+  --color-leaf-400: #52a777;
+  --color-leaf-500: #358a5a;
+  --color-leaf-600: #256f47;
+  --color-leaf-700: #1f593a;
+  --color-leaf-800: #1b4730;
+  --color-leaf-900: #163a28;
+  --color-leaf-950: #0a2015;
+
+  /* Acento ámbar cálido (usado con moderación) */
+  --color-accent-50:  #fdf6e9;
+  --color-accent-100: #faeacb;
+  --color-accent-200: #f5d493;
+  --color-accent-300: #efba5b;
+  --color-accent-400: #eaa432;
+  --color-accent-500: #d98a1f;
+  --color-accent-600: #bd6b18;
+  --color-accent-700: #984f17;
+
+  /* Fondo base */
+  --color-cream: #fafbf8;
+
+  /* Tipografías */
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ---------- Base ---------- */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-cream);
+  color: var(--color-leaf-900);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Detalles y animaciones ---------- */
+.confidence-fill {
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Transición suave al cambiar de pestaña */
+.tab-panel {
+  animation: fade-in 0.25s ease-out;
+}
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
