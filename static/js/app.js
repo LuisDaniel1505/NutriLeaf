@@ -37,6 +37,9 @@ const cameraHint = document.getElementById("camera-hint");
 const result = document.getElementById("result");
 const resultCard = document.getElementById("result-card");
 
+// Archivo actualmente seleccionado (funciona tanto con selección como con drag & drop).
+let selectedFile = null;
+
 // ---------- Pestañas ----------
 const TAB_BASE = "px-5 py-2 rounded-full text-sm font-semibold transition-colors";
 const TAB_ACTIVE = "bg-leaf-700 text-white shadow";
@@ -111,6 +114,7 @@ function showPreview(file) {
     renderError("El archivo seleccionado no es una imagen. Usa JPG o PNG.");
     return;
   }
+  selectedFile = file; // Guarda el archivo para poder analizarlo después.
   const reader = new FileReader();
   reader.onload = (e) => {
     previewImg.src = e.target.result;
@@ -122,7 +126,7 @@ function showPreview(file) {
 
 // ---------- Análisis de imagen ----------
 btnAnalyze.addEventListener("click", async () => {
-  const file = fileInput.files[0];
+  const file = selectedFile; // Usa el archivo guardado (soporta drag & drop).
   if (!file) return;
 
   btnAnalyze.disabled = true;
