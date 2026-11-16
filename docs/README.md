@@ -4,6 +4,9 @@ En esta carpeta se almacena la documentación del proyecto.
 
 ## Documentos disponibles
 
+- **[Contexto del proyecto](contexto_del_proyecto.md)** — resumen completo del
+  proyecto en lenguaje sencillo, pensado para presentar en el Encuentro de
+  Sistemas y para que todo el equipo quede en la misma página.
 - **[Manual de usuario](manual_de_usuario.md)** — guía para el usuario final:
   instalación, uso de la aplicación, interpretación de resultados y solución de
   problemas.
