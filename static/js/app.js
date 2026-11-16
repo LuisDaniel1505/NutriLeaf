@@ -39,6 +39,17 @@ const resultCard = document.getElementById("result-card");
 // Archivo actualmente seleccionado (funciona tanto con selección como con drag & drop).
 let selectedFile = null;
 
+// Último diagnóstico (para poder exportarlo).
+let lastResult = null;
+
+// Historial de predicciones (persistente en localStorage).
+let history = [];
+try {
+  history = JSON.parse(localStorage.getItem("nutrileaf_history") || "[]");
+} catch {
+  history = [];
+}
+
 // ---------- Pestañas ----------
 const TAB_BASE = "px-5 py-2 rounded-full text-sm font-semibold transition-colors";
 const TAB_ACTIVE = "bg-leaf-700 text-white shadow";
@@ -218,7 +229,6 @@ function startFrameLoop() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Error");
-      renderResult(data);
       renderCameraOverlay(data);
     } catch (err) {
       cameraOverlay.innerHTML = `<span>⚠️ ${err.message}</span>`;
@@ -280,6 +290,8 @@ function renderResult(data) {
     actionsEl.appendChild(li);
   });
 
+  lastResult = data;
+  addToHistory(data);
   result.classList.remove("hidden");
 }
 
@@ -301,6 +313,73 @@ function renderError(msg) {
   document.getElementById("rec-actions").innerHTML = "";
 }
 
+// ---------- Historial ----------
+function addToHistory(data) {
+  const entry = {
+    class: data.class,
+    label_es: data.label_es,
+    confidence: data.confidence,
+    time: new Date().toLocaleString("es-MX"),
+  };
+  history.unshift(entry);
+  if (history.length > 10) history = history.slice(0, 10);
+  localStorage.setItem("nutrileaf_history", JSON.stringify(history));
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById("history-list");
+  const empty = document.getElementById("history-empty");
+  list.innerHTML = "";
+  empty.classList.toggle("hidden", history.length > 0);
+  history.forEach((entry) => {
+    const meta = CLASS_META[entry.class] || { badge: "bg-leaf-500", symbol: "?", name: entry.class };
+    const li = document.createElement("li");
+    li.className = "flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-leaf-100 shadow-sm";
+    li.innerHTML = `
+      <span class="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0 ${meta.badge}">${meta.symbol}</span>
+      <div class="flex-1 min-w-0">
+        <div class="font-medium text-leaf-900 truncate">${entry.label_es}</div>
+        <div class="text-xs text-leaf-700/60">${entry.time}</div>
+      </div>
+      <span class="font-semibold text-leaf-900 text-sm shrink-0">${Math.round(entry.confidence * 100)}%</span>
+    `;
+    list.appendChild(li);
+  });
+}
+
+// ---------- Exportación del diagnóstico ----------
+document.getElementById("btn-export").addEventListener("click", () => {
+  if (!lastResult) return;
+  const d = lastResult;
+  const lines = [
+    "NutriLeaf — Diagnóstico",
+    "======================",
+    `Fecha: ${new Date().toLocaleString("es-MX")}`,
+    "",
+    `Diagnóstico: ${d.label_es}`,
+    `Confianza: ${Math.round(d.confidence * 100)}%`,
+    "",
+    "Probabilidades:",
+    ...Object.entries(d.probabilities)
+      .sort((a, b) => b[1] - a[1])
+      .map(([k, v]) => `  - ${CLASS_META[k]?.name || k}: ${Math.round(v * 100)}%`),
+    "",
+    "Recomendación:",
+    `  ${d.recommendation.detail || ""}`,
+    ...(d.recommendation.actions || []).map((a) => `  • ${a}`),
+    "",
+  ];
+  const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `diagnostico_${d.class}_${Date.now()}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
 // ---------- Inicialización ----------
 renderHomeClasses();
+renderHistory();
 setActiveTab("home");
