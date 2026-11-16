@@ -340,6 +340,7 @@ function renderHistory() {
   empty.classList.toggle("hidden", hasHistory);
   document.getElementById("btn-export-selected").disabled = !hasHistory;
   document.getElementById("btn-export-all").disabled = !hasHistory;
+  document.getElementById("btn-clear-history").disabled = !hasHistory;
 
   history.forEach((entry, index) => {
     const meta = CLASS_META[entry.class] || { badge: "bg-leaf-500", symbol: "?", name: entry.class };
@@ -439,6 +440,12 @@ document.getElementById("btn-export-selected").addEventListener("click", () => {
 
 document.getElementById("btn-export-all").addEventListener("click", () => {
   exportDiagnosesPDF(history);
+});
+
+document.getElementById("btn-clear-history").addEventListener("click", () => {
+  history = [];
+  localStorage.removeItem("nutrileaf_history");
+  renderHistory();
 });
 
 // ---------- Inicialización ----------
