@@ -61,7 +61,7 @@ def build_transforms(input_size: int = 224) -> tuple[transforms.Compose, transfo
     """
     train_transform = transforms.Compose(
         [
-            transforms.Resize((input_size, input_size)),
+            transforms.RandomResizedCrop(input_size, scale=(0.8, 1.0)),
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.RandomRotation(degrees=15),
             transforms.ColorJitter(brightness=0.15, contrast=0.15),
@@ -72,7 +72,8 @@ def build_transforms(input_size: int = 224) -> tuple[transforms.Compose, transfo
 
     eval_transform = transforms.Compose(
         [
-            transforms.Resize((input_size, input_size)),
+            transforms.Resize(int(input_size * 1.14)),
+            transforms.CenterCrop(input_size),
             transforms.ToTensor(),
             transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD),
         ]
@@ -272,7 +273,8 @@ def main() -> None:
     parser.add_argument("--epochs", type=int, default=20)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--lr", type=float, default=1e-4)
-    parser.add_argument("--input-size", type=int, default=224)
+    parser.add_argument("--input-size", type=int, default=320,
+                        help="Tamaño de entrada (resolución) de las imágenes")
     parser.add_argument("--num-workers", type=int, default=0,
                         help="Hilos de carga de datos (0 evita problemas de spawn en Windows)")
     parser.add_argument("--device", type=str, default=None, help="'cuda' o 'cpu'")

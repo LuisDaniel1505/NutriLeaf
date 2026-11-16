@@ -67,10 +67,15 @@ def build_model(num_classes: int = 5, arch: str = "resnet18", pretrained: bool =
 
 
 def build_inference_transform(input_size: int = 224) -> transforms.Compose:
-    """Transform de preprocesado para inferencia (redimensionar + normalizar)."""
+    """Transform de preprocesado para inferencia (redimensionar + normalizar).
+
+    Respeta la proporción de la imagen (redimensiona el lado corto y recorta el
+    centro), en lugar de estirarla a un tamaño fijo.
+    """
     return transforms.Compose(
         [
-            transforms.Resize((input_size, input_size)),
+            transforms.Resize(int(input_size * 1.14)),
+            transforms.CenterCrop(input_size),
             transforms.ToTensor(),
             transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD),
         ]
