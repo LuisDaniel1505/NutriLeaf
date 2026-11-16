@@ -14,6 +14,9 @@
   />
 
   <link rel="stylesheet" href="/static/css/style.css" />
+
+  <!-- jsPDF para exportar diagnósticos a PDF -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 </head>
 
 <body class="min-h-screen bg-cream text-leaf-900 flex flex-col antialiased">
@@ -41,6 +44,7 @@
       <button class="tab active px-5 py-2 rounded-full text-sm font-semibold transition-colors" id="tab-home" role="tab" aria-selected="true">Inicio</button>
       <button class="tab px-5 py-2 rounded-full text-sm font-semibold transition-colors" id="tab-image" role="tab" aria-selected="false">Analizar imagen</button>
       <button class="tab px-5 py-2 rounded-full text-sm font-semibold transition-colors" id="tab-camera" role="tab" aria-selected="false">Cámara en vivo</button>
+      <button class="tab px-5 py-2 rounded-full text-sm font-semibold transition-colors" id="tab-history" role="tab" aria-selected="false">Historial</button>
     </div>
   </nav>
 
@@ -71,8 +75,8 @@
       <!-- Lo que detectamos -->
       <div class="mt-16">
         <h2 class="font-display font-semibold text-2xl text-leaf-900 text-center">Lo que podemos detectar</h2>
-        <p class="text-center text-leaf-700/70 mt-2">Cinco estados de la hoja, de un vistazo.</p>
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mt-8" id="home-classes">
+        <p class="text-center text-leaf-700/70 mt-2">Cuatro estados de la hoja, de un vistazo.</p>
+        <div class="flex flex-wrap justify-center gap-3 mt-8" id="home-classes">
           <!-- Se rellena desde app.js -->
         </div>
       </div>
@@ -165,17 +169,26 @@
 
             <button id="btn-export" class="mt-6 inline-flex items-center gap-2 bg-leaf-100 hover:bg-leaf-200 text-leaf-800 font-semibold px-5 py-2.5 rounded-full transition-colors">
               <svg viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4"><path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z"/><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z"/></svg>
-              Descargar diagnóstico
+              Descargar PDF
             </button>
           </div>
         </section>
+      </div>
+    </section>
 
-        <!-- ===================== HISTORIAL ===================== -->
-        <section id="history" class="mt-10">
-          <h3 class="font-display font-semibold text-xl text-leaf-900">Historial</h3>
-          <p id="history-empty" class="text-leaf-700/60 text-sm mt-1">Aún no hay predicciones.</p>
-          <ul id="history-list" class="mt-4 space-y-2"></ul>
-        </section>
+    <!-- ===================== PANEL: HISTORIAL ===================== -->
+    <section class="tab-panel hidden mt-10" id="panel-history" role="tabpanel">
+      <div class="max-w-2xl mx-auto">
+        <h2 class="font-display font-semibold text-3xl text-leaf-900">Historial</h2>
+        <p class="text-leaf-700/80 mt-2">Tus diagnósticos recientes. Selecciona varios para exportarlos juntos en PDF.</p>
+
+        <div class="mt-6 flex flex-wrap gap-3">
+          <button id="btn-export-selected" class="inline-flex items-center gap-2 bg-leaf-600 hover:bg-leaf-700 text-white font-semibold px-5 py-2.5 rounded-full transition-colors disabled:opacity-50">Exportar seleccionados (PDF)</button>
+          <button id="btn-export-all" class="inline-flex items-center gap-2 bg-leaf-100 hover:bg-leaf-200 text-leaf-800 font-semibold px-5 py-2.5 rounded-full transition-colors disabled:opacity-50">Exportar todo</button>
+        </div>
+
+        <p id="history-empty" class="text-leaf-700/60 text-sm mt-6">Aún no hay predicciones.</p>
+        <ul id="history-list" class="mt-4 space-y-2"></ul>
       </div>
     </section>
 
