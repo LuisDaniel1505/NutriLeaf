@@ -196,6 +196,41 @@ y el dataset *Doctor Maíz* de Hugging Face (~4.200 imágenes de campo real):
 
 ---
 
+## 🌐 Despliegue
+
+La aplicación está desplegada en **GitHub Pages** (la IA corre directamente en
+el navegador mediante ONNX Runtime, sin necesidad de servidor):
+
+🔗 **https://luisdaniel1505.github.io/NutriLeaf/**
+
+### Cómo funciona el despliegue
+
+1. El modelo PyTorch se exporta a **ONNX** (`scripts/export_onnx.py`).
+2. El navegador lo ejecuta con **onnxruntime-web** (inferencia 100% en el cliente).
+3. La rama `gh-pages` contiene el sitio estático (HTML + CSS + JS + `model.onnx`).
+
+### Cómo actualizar el sitio desplegado
+
+```powershell
+# 1. Re-exportar el modelo a ONNX (si el modelo cambió)
+python scripts/export_onnx.py
+Copy-Item models\leaf_classifier.onnx static\model.onnx -Force
+
+# 2. Regenerar la rama gh-pages
+git switch --orphan gh-pages
+git rm -rf . --quiet
+# copiar static/* a la raíz (index.html con rutas relativas), css/, js/, model.onnx
+git add -A
+git commit -m "deploy: actualizar sitio"
+git push origin gh-pages --force
+git switch main
+```
+
+> **Nota:** el modelo ONNX (`static/model.onnx`, ~45 MB) no se versiona en `main`;
+> se genera con `scripts/export_onnx.py` y se incluye únicamente en la rama `gh-pages`.
+
+---
+
 ## 📄 Licencia
 
 Distribuido bajo la licencia **MIT**. Consulta el archivo [LICENSE](LICENSE).
