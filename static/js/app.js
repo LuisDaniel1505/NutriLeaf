@@ -12,6 +12,120 @@ const CLASS_META = {
   potassium:  { symbol: "K",  badge: "bg-orange-500",  name: "Potasio",    symptom: "Bordes secos y amarillos" },
 };
 
+// Etiquetas y recomendaciones en español (para la inferencia en el navegador).
+const LABELS_ES = {
+  healthy: "Planta saludable",
+  nitrogen: "Deficiencia de Nitrógeno (N)",
+  phosphorus: "Deficiencia de Fósforo (P)",
+  potassium: "Deficiencia de Potasio (K)",
+};
+
+const RECOMMENDATIONS = {
+  healthy: {
+    short: "Sin deficiencias detectadas",
+    detail: "La hoja no presenta señales visibles de las deficiencias que analiza NutriLeaf. Continúa con el monitoreo regular del cultivo para detectar cambios a tiempo.",
+    actions: ["Mantener el plan de fertilización actual.", "Revisar el cultivo de forma periódica (semanal).", "Regar de forma adecuada según la etapa de la planta."],
+  },
+  nitrogen: {
+    short: "Deficiencia de Nitrógeno (N)",
+    detail: "El amarillamiento en forma de 'V' que inicia en la punta de la hoja y avanza hacia la base es el síntoma típico de falta de nitrógeno. El nitrógeno es clave para el crecimiento y el color verde de la planta.",
+    actions: ["Aplicar fertilizante nitrogenado (urea o sulfato de amonio).", "Incorporar materia orgánica o compost al suelo.", "Evitar el exceso de agua, que puede lavar el nitrógeno del suelo."],
+  },
+  phosphorus: {
+    short: "Deficiencia de Fósforo (P)",
+    detail: "Las tonalidades moradas o rojizas en algunas partes de la hoja sugieren falta de fósforo, nutriente esencial para el desarrollo de raíces y la transferencia de energía.",
+    actions: ["Aplicar fertilizante fosfatado (superfosfato o DAP) cerca de la raíz.", "Considerar que en suelos fríos el fósforo se absorbe con dificultad.", "Verificar el pH del suelo; un pH extremo limita la disponibilidad de fósforo."],
+  },
+  potassium: {
+    short: "Deficiencia de Potasio (K)",
+    detail: "El amarillamiento y las zonas secas, especialmente en los bordes de las hojas, indican falta de potasio. Este nutriente regula el agua y la resistencia de la planta.",
+    actions: ["Aplicar cloruro o sulfato de potasio.", "Evitar el exceso de nitrógeno, que puede agravar la deficiencia.", "Mantener un riego regular, ya que el potasio se absorbe con agua."],
+  },
+};
+
+// ---------- Inferencia en el navegador (ONNX Runtime) ----------
+const CLASS_ORDER = ["healthy", "nitrogen", "phosphorus", "potassium"];
+const INPUT_SIZE = 320;
+const RESIZE = Math.round(INPUT_SIZE * 1.14); // 365
+const MEAN = [0.485, 0.456, 0.406];
+const STD = [0.229, 0.224, 0.225];
+
+let onnxSession = null;
+let onnxFailed = false;
+
+async function getOnnxSession() {
+  if (onnxSession) return onnxSession;
+  if (onnxFailed) return null;
+  // Prueba rutas relativas y absolutas (para GitHub Pages y servidor local).
+  const paths = ["model.onnx", "/static/model.onnx"];
+  for (const p of paths) {
+    try {
+      onnxSession = await ort.InferenceSession.create(p);
+      return onnxSession;
+    } catch (e) {
+      // Probar la siguiente ruta.
+    }
+  }
+  onnxFailed = true;
+  return null;
+}
+
+function preprocessToTensor(img) {
+  const w = img.naturalWidth || img.videoWidth || img.width;
+  const h = img.naturalHeight || img.videoHeight || img.height;
+  const scale = RESIZE / Math.min(w, h);
+  const nw = Math.round(w * scale);
+  const nh = Math.round(h * scale);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = nw;
+  canvas.height = nh;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0, nw, nh);
+
+  const cx = Math.floor((nw - INPUT_SIZE) / 2);
+  const cy = Math.floor((nh - INPUT_SIZE) / 2);
+  const crop = document.createElement("canvas");
+  crop.width = INPUT_SIZE;
+  crop.height = INPUT_SIZE;
+  const cctx = crop.getContext("2d");
+  cctx.drawImage(canvas, cx, cy, INPUT_SIZE, INPUT_SIZE, 0, 0, INPUT_SIZE, INPUT_SIZE);
+
+  const data = cctx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE).data;
+  const input = new Float32Array(3 * INPUT_SIZE * INPUT_SIZE);
+  for (let i = 0; i < INPUT_SIZE * INPUT_SIZE; i++) {
+    for (let c = 0; c < 3; c++) {
+      input[c * INPUT_SIZE * INPUT_SIZE + i] = (data[i * 4 + c] / 255.0 - MEAN[c]) / STD[c];
+    }
+  }
+  return input;
+}
+
+async function predictOnnx(img) {
+  const session = await getOnnxSession();
+  if (!session) return null;
+  const input = preprocessToTensor(img);
+  const tensor = new ort.Tensor("float32", input, [1, 3, INPUT_SIZE, INPUT_SIZE]);
+  const results = await session.run({ input: tensor });
+  const logits = Array.from(results.output.data);
+  const maxLogit = Math.max(...logits);
+  const exp = logits.map((x) => Math.exp(x - maxLogit));
+  const sum = exp.reduce((a, b) => a + b, 0);
+  const probs = exp.map((x) => x / sum);
+  const idx = probs.indexOf(Math.max(...probs));
+  const className = CLASS_ORDER[idx];
+  const probabilities = {};
+  CLASS_ORDER.forEach((c, i) => { probabilities[c] = probs[i]; });
+  return {
+    class: className,
+    class_index: idx,
+    label_es: LABELS_ES[className],
+    confidence: probs[idx],
+    probabilities,
+    recommendation: RECOMMENDATIONS[className],
+  };
+}
+
 // ---------- Referencias al DOM ----------
 const tabHome = document.getElementById("tab-home");
 const tabImage = document.getElementById("tab-image");
@@ -146,14 +260,19 @@ btnAnalyze.addEventListener("click", async () => {
   loadingImage.classList.remove("hidden");
 
   try {
-    const form = new FormData();
-    form.append("file", file);
-    const res = await fetch("/predict", { method: "POST", body: form });
-    const data = await res.json();
-    if (res.status === 503) {
-      throw new Error("El modelo aún no está entrenado. Ejecuta el entrenamiento antes de usar la aplicación.");
+    // Intenta primero la inferencia en el navegador (ONNX); si no está
+    // disponible, recurre al backend (/predict).
+    let data = await predictOnnx(previewImg);
+    if (!data) {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/predict", { method: "POST", body: form });
+      data = await res.json();
+      if (res.status === 503) {
+        throw new Error("El modelo aún no está entrenado. Ejecuta el entrenamiento antes de usar la aplicación.");
+      }
+      if (!res.ok) throw new Error(data.detail || "Error al analizar la imagen");
     }
-    if (!res.ok) throw new Error(data.detail || "Error al analizar la imagen");
     renderResult(data);
   } catch (err) {
     renderError(err.message);
@@ -225,13 +344,16 @@ function startFrameLoop() {
     const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
 
     try {
-      const res = await fetch("/predict-frame", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: dataUrl }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Error");
+      let data = await predictOnnx(video);
+      if (!data) {
+        const res = await fetch("/predict-frame", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: dataUrl }),
+        });
+        data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Error");
+      }
       renderCameraOverlay(data);
     } catch (err) {
       cameraOverlay.innerHTML = `<span>⚠️ ${err.message}</span>`;

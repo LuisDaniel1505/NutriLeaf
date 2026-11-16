@@ -36,6 +36,9 @@ models/plots/
 models/reports/
 !models/.gitkeep
 
+# Modelo ONNX para el navegador (se regenera con scripts/export_onnx.py)
+static/model.onnx
+
 # ===== Datos (imágenes y datasets, NO se versionan) =====
 data/
 !data/.gitkeep
