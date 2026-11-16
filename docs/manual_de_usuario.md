@@ -140,7 +140,6 @@ Al abrir la aplicación se muestran dos pestañas: **"Analizar imagen"** y
 | Nitrógeno (N) | 🟡 | Amarillamiento en forma de "V" desde la punta |
 | Fósforo (P) | 🟣 | Tonalidades moradas o rojizas |
 | Potasio (K) | 🟠 | Amarillamiento y zonas secas en los bordes |
-| Magnesio (Mg) | 🟢 | Zonas amarillas entre las nervaduras |
 
 ## 7. Interpretación de resultados
 

@@ -38,7 +38,6 @@ automatiza ese diagnóstico mediante un modelo de aprendizaje profundo.
 | Nitrógeno (N) | 🟡 | Amarillamiento en forma de "V" desde la punta |
 | Fósforo (P) | 🟣 | Tonalidades moradas o rojizas |
 | Potasio (K) | 🟠 | Amarillamiento y zonas secas en los bordes |
-| Magnesio (Mg) | 🟢 | Zonas amarillas entre las nervaduras |
 
 ---
 
@@ -48,6 +47,8 @@ automatiza ese diagnóstico mediante un modelo de aprendizaje profundo.
 - 🎥 **Cámara en vivo**: analiza la hoja en tiempo real con la cámara del dispositivo.
 - 📊 **Confianza del modelo**: muestra el porcentaje de confianza por clase.
 - 💡 **Recomendaciones**: sugerencias agronómicas sencillas para cada deficiencia.
+- 📜 **Historial**: guarda los últimos diagnósticos (persistentes en el navegador).
+- 📥 **Exportación a PDF**: descarga uno o varios diagnósticos a la vez.
 
 ## 🧠 Tecnologías
 
@@ -56,8 +57,8 @@ automatiza ese diagnóstico mediante un modelo de aprendizaje profundo.
 | Lenguaje | Python 3.11 |
 | Deep learning | PyTorch + torchvision (transfer learning, ResNet18) |
 | Backend | FastAPI + Uvicorn |
-| Frontend | HTML + CSS + JavaScript (vanilla) |
-| Datos | `Maize Nutrient Deficiency Dataset` (5 clases) |
+| Frontend | HTML + CSS + JavaScript (vanilla) + Tailwind CSS |
+| Datos | *Maize Nutrient Deficiency Dataset* + *Doctor Maíz* (Hugging Face) |
 | Control de versiones | Git + GitHub |
 
 > **Nota sobre TensorFlow:** TensorFlow no ofrece soporte de GPU en Windows nativo
@@ -72,17 +73,20 @@ automatiza ese diagnóstico mediante un modelo de aprendizaje profundo.
 NutriLeaf/
 ├── app/                    # Backend (FastAPI) y lógica de inferencia
 │   ├── config.py           # Rutas y configuración global
-│   ├── labels.py           # Etiquetas de las 5 clases
+│   ├── labels.py           # Etiquetas de las 4 clases
 │   ├── recommendations.py  # Recomendaciones agronómicas
 │   ├── model.py            # Arquitectura del modelo + inferencia
 │   └── main.py             # Endpoints de la API
 ├── training/               # Preparación de datos y entrenamiento
-│   ├── preprocess.py       # Extrae y divide el dataset
+│   ├── preprocess.py       # Extrae y divide el dataset base
+│   ├── build_dataset.py    # Combina los datasets (base + Hugging Face)
 │   └── train.py            # Entrena el modelo con transfer learning
 ├── static/                 # Interfaz web
 │   ├── index.html
 │   ├── css/style.css
 │   └── js/app.js
+├── scripts/                # Scripts auxiliares (verificar, evaluar, descargar)
+├── tests/                  # Pruebas automatizadas (pytest)
 ├── models/                 # Modelo entrenado (no versionado)
 ├── data/                   # Dataset (no versionado)
 ├── docs/                   # Documentación y manual de usuario
@@ -161,18 +165,21 @@ Abre <http://localhost:8000> en tu navegador.
 
 ## 📈 Resultados del modelo
 
-Con transfer learning (**ResNet18** preentrenada) + **pesos por clase**, sobre 463
-imágenes y 20 épocas:
+Modelo de **4 clases** (sana, N, P, K) con transfer learning (**ResNet18**) +
+pesos por clase, resolución 320×320, entrenado con el dataset base (463 imágenes)
+y el dataset *Doctor Maíz* de Hugging Face (~4.200 imágenes de campo real):
 
-| Métrica | Valor |
+| Clase | F1 |
 | --- | --- |
-| Exactitud en validación | 97.2 % |
-| Exactitud en test | **93.0 %** |
-| F1 (macro) | 0.92 |
+| Sana | 0.92 |
+| Nitrógeno (N) | **1.00** |
+| Fósforo (P) | 0.97 |
+| Potasio (K) | 0.80 |
+| **Exactitud en test** | **92.3 %** |
 
 > Consulta la comparativa completa en [docs/experimentos.md](docs/experimentos.md).
-> La clase con menor rendimiento es **Potasio** (F1 0.75), por tener menos imágenes
-> en el dataset (56) y confundirse con Magnesio (síntomas similares).
+> La clase con menor rendimiento es **Potasio** (F1 0.80), por ser la deficiencia
+> más sutil (amarillamiento tenue en los bordes).
 
 ## 🗺️ Hoja de ruta
 
@@ -182,7 +189,10 @@ imágenes y 20 épocas:
 - [x] Backend de predicción
 - [x] Interfaz web (imagen + cámara en vivo)
 - [x] Manual de usuario (`docs/`)
-- [ ] Pulido final y documentación
+- [x] Pruebas automatizadas y manejo de errores
+- [x] Rediseño con Tailwind CSS
+- [x] Historial y exportación a PDF
+- [x] Release v1.0.0
 
 ---
 
