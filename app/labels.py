@@ -9,7 +9,6 @@ CLASS_NAMES = [
     "nitrogen",      # 1
     "phosphorus",    # 2
     "potassium",     # 3
-    "magnesium",     # 4
 ]
 
 # Nombre legible en español para la interfaz
@@ -18,7 +17,6 @@ CLASS_LABELS_ES = {
     "nitrogen": "Deficiencia de Nitrógeno (N)",
     "phosphorus": "Deficiencia de Fósforo (P)",
     "potassium": "Deficiencia de Potasio (K)",
-    "magnesium": "Deficiencia de Magnesio (Mg)",
 }
 
 # Símbolo químico corto para mostrar junto al nombre
@@ -27,7 +25,6 @@ CLASS_SYMBOLS = {
     "nitrogen": "N",
     "phosphorus": "P",
     "potassium": "K",
-    "magnesium": "Mg",
 }
 
 CLASS_TO_IDX = {name: i for i, name in enumerate(CLASS_NAMES)}
@@ -43,6 +40,4 @@ DATASET_FOLDER_MAP = {
     "phosphorus": "phosphorus",
     "pottasium": "potassium",
     "potassium": "potassium",
-    "magnessium": "magnesium",
-    "magnesium": "magnesium",
 }

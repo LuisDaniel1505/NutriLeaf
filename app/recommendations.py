@@ -58,16 +58,4 @@ RECOMMENDATIONS = {
             "Mantener un riego regular, ya que el potasio se absorbe con agua.",
         ],
     },
-    "magnesium": {
-        "short": "Deficiencia de Magnesio (Mg)",
-        "detail": (
-            "Las zonas amarillas entre las nervaduras de las hojas son un signo de falta "
-            "de magnesio, nutriente central en la clorofila y la fotosíntesis."
-        ),
-        "actions": [
-            "Aplicar sulfato de magnesio (sales de Epsom) vía foliar o al suelo.",
-            "Incorporar dolomita si el suelo además es ácido.",
-            "Evitar excesos de potasio y calcio, que compiten con el magnesio.",
-        ],
-    },
 }

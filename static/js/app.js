@@ -10,7 +10,6 @@ const CLASS_META = {
   nitrogen:   { symbol: "N",  badge: "bg-yellow-500",  name: "Nitrógeno",  symptom: "Amarillamiento en forma de V" },
   phosphorus: { symbol: "P",  badge: "bg-purple-500",  name: "Fósforo",    symptom: "Tonos morados o rojizos" },
   potassium:  { symbol: "K",  badge: "bg-orange-500",  name: "Potasio",    symptom: "Bordes secos y amarillos" },
-  magnesium:  { symbol: "Mg", badge: "bg-emerald-400", name: "Magnesio",   symptom: "Amarillo entre nervaduras" },
 };
 
 // ---------- Referencias al DOM ----------
