@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NutriLeaf — ¿Qué le pasa a tu maíz?</title>
+
+  <!-- Tipografías: Fraunces (títulos) + Inter (texto) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- jsPDF para exportar diagnósticos a PDF -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+  <!-- onnxruntime-web para inferencia en el navegador -->
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/ort.min.js"></script>
+</head>
+
+<body class="min-h-screen bg-cream text-leaf-900 flex flex-col antialiased">
+
+  <!-- ===================== Encabezado ===================== -->
+  <header class="bg-white/80 backdrop-blur border-b border-leaf-100 sticky top-0 z-20">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <a href="#" id="brand" class="flex items-center gap-2.5 text-leaf-700 hover:text-leaf-800 transition-colors">
+        <!-- Logo: hoja dibujada a medida -->
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-7 w-7">
+          <path d="M24 4C16 9 7 18 7 28a17 17 0 0 0 34 0C41 18 32 9 24 4Z" fill="currentColor"/>
+          <path d="M24 8v34" stroke="rgba(255,255,255,.5)" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M24 15l-9-3M24 22l-10-3M24 29l-9-2M24 36l-5 0" stroke="rgba(255,255,255,.45)" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M24 15l9-3M24 22l10-3M24 29l9-2M24 36l5 0" stroke="rgba(255,255,255,.45)" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <span class="font-display font-semibold text-xl tracking-tight">Nutri<span class="text-accent-500">Leaf</span></span>
+      </a>
+      <span class="hidden sm:block text-sm text-leaf-600/70">Inteligencia artificial para tu cultivo</span>
+    </div>
+  </header>
+
+  <!-- ===================== Pestañas ===================== -->
+  <nav class="max-w-5xl mx-auto px-4 sm:px-6 mt-6">
+    <div class="flex gap-1.5 bg-leaf-100/60 p-1.5 rounded-full w-fit" role="tablist">
+      <button class="tab active px-5 py-2 rounded-full text-sm font-semibold transition-colors" id="tab-home" role="tab" aria-selected="true">Inicio</button>
+      <button class="tab px-5 py-2 rounded-full text-sm font-semibold transition-colors" id="tab-image" role="tab" aria-selected="false">Analizar imagen</button>
+      <button class="tab px-5 py-2 rounded-full text-sm font-semibold transition-colors" id="tab-camera" role="tab" aria-selected="false">Cámara en vivo</button>
+      <button class="tab px-5 py-2 rounded-full text-sm font-semibold transition-colors" id="tab-history" role="tab" aria-selected="false">Historial</button>
+    </div>
+  </nav>
+
+  <main class="max-w-5xl mx-auto px-4 sm:px-6 w-full flex-1 pb-16">
+
+    <!-- ===================== PANEL: INICIO ===================== -->
+    <section class="tab-panel mt-10" id="panel-home" role="tabpanel">
+      <div class="text-center max-w-2xl mx-auto">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-leaf-600 animate-float">
+          <path d="M24 4C16 9 7 18 7 28a17 17 0 0 0 34 0C41 18 32 9 24 4Z" fill="currentColor"/>
+          <path d="M24 8v34" stroke="rgba(255,255,255,.5)" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M24 15l-9-3M24 22l-10-3M24 29l-9-2M24 36l-5 0" stroke="rgba(255,255,255,.45)" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M24 15l9-3M24 22l10-3M24 29l9-2M24 36l5 0" stroke="rgba(255,255,255,.45)" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <h1 class="font-display font-semibold text-4xl sm:text-5xl text-leaf-900 mt-6 leading-tight">
+          ¿Qué le pasa a tu maíz?
+        </h1>
+        <p class="text-leaf-700/80 text-lg mt-4 leading-relaxed">
+          NutriLeaf analiza las hojas de tu cultivo y te dice si les falta algún
+          nutriente. Tú pones la foto; nosotros el diagnóstico.
+        </p>
+        <button id="btn-cta-start" class="mt-8 inline-flex items-center gap-2 bg-accent-500 hover:bg-accent-600 text-white font-semibold px-7 py-3.5 rounded-full shadow-lg shadow-accent-500/25 transition-colors">
+          Empezar ahora
+          <svg viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h9.94L10.22 5.78a.75.75 0 111.06-1.06l4.5 4.5a.75.75 0 010 1.06l-4.5 4.5a.75.75 0 11-1.06-1.06l3.47-3.47H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg>
+        </button>
+      </div>
+
+      <!-- Lo que detectamos -->
+      <div class="mt-16">
+        <h2 class="font-display font-semibold text-2xl text-leaf-900 text-center">Lo que podemos detectar</h2>
+        <p class="text-center text-leaf-700/70 mt-2">Cuatro estados de la hoja, de un vistazo.</p>
+        <div class="flex flex-wrap justify-center gap-3 mt-8" id="home-classes">
+          <!-- Se rellena desde app.js -->
+        </div>
+      </div>
+
+      <!-- Cómo funciona -->
+      <div class="mt-16">
+        <h2 class="font-display font-semibold text-2xl text-leaf-900 text-center">¿Cómo funciona?</h2>
+        <div class="grid sm:grid-cols-3 gap-4 mt-8">
+          <div class="bg-white rounded-2xl p-6 border border-leaf-100 shadow-sm">
+            <div class="w-10 h-10 rounded-full bg-leaf-100 text-leaf-700 flex items-center justify-center font-display font-semibold">1</div>
+            <h3 class="font-semibold text-leaf-900 mt-4">Toma una foto</h3>
+            <p class="text-leaf-700/70 text-sm mt-1.5">Fotografía una hoja o apunta la cámara hacia ella.</p>
+          </div>
+          <div class="bg-white rounded-2xl p-6 border border-leaf-100 shadow-sm">
+            <div class="w-10 h-10 rounded-full bg-leaf-100 text-leaf-700 flex items-center justify-center font-display font-semibold">2</div>
+            <h3 class="font-semibold text-leaf-900 mt-4">La IA analiza</h3>
+            <p class="text-leaf-700/70 text-sm mt-1.5">Revisa colores, manchas y patrones de la hoja.</p>
+          </div>
+          <div class="bg-white rounded-2xl p-6 border border-leaf-100 shadow-sm">
+            <div class="w-10 h-10 rounded-full bg-leaf-100 text-leaf-700 flex items-center justify-center font-display font-semibold">3</div>
+            <h3 class="font-semibold text-leaf-900 mt-4">Recibe el diagnóstico</h3>
+            <p class="text-leaf-700/70 text-sm mt-1.5">Con su confianza y una recomendación práctica.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== PANEL: ANALIZAR IMAGEN ===================== -->
+    <section class="tab-panel hidden mt-10" id="panel-image" role="tabpanel">
+      <div class="max-w-2xl mx-auto">
+        <h2 class="font-display font-semibold text-3xl text-leaf-900">Analiza una hoja</h2>
+        <p class="text-leaf-700/80 mt-2">Sube una foto y descubre si a tu maíz le falta algo.</p>
+
+        <div class="mt-6">
+          <div id="dropzone" class="border-2 border-dashed border-leaf-300 rounded-2xl bg-white p-10 text-center cursor-pointer transition-colors hover:border-leaf-500 hover:bg-leaf-50/50">
+            <input type="file" id="file-input" accept="image/*" hidden />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-10 h-10 mx-auto text-leaf-400">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A1.5 1.5 0 0021.75 19.5V4.5A1.5 1.5 0 0020.25 3H3.75A1.5 1.5 0 002.25 4.5v15A1.5 1.5 0 003.75 21z" />
+            </svg>
+            <p class="mt-3 font-medium text-leaf-800">Arrastra tu foto aquí <span class="text-leaf-500">o haz clic para elegirla</span></p>
+            <p class="text-sm text-leaf-700/60 mt-1">JPG o PNG · procura que la hoja se vea bien</p>
+          </div>
+
+          <div id="preview-wrap" class="hidden mt-5 text-center">
+            <img id="preview" alt="Vista previa de la hoja" class="mx-auto max-h-80 rounded-2xl shadow-md" />
+            <button id="btn-analyze" class="mt-5 inline-flex items-center gap-2 bg-leaf-600 hover:bg-leaf-700 text-white font-semibold px-7 py-3 rounded-full shadow-lg shadow-leaf-600/20 transition-colors">
+              Analizar hoja
+            </button>
+          </div>
+
+          <div id="loading-image" class="hidden mt-5 flex items-center justify-center gap-3 text-leaf-700">
+            <svg class="animate-spin h-5 w-5 text-leaf-600" viewBox="0 0 24 24" fill="none">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+            <span>Analizando la imagen…</span>
+          </div>
+        </div>
+
+        <!-- ===================== RESULTADO ===================== -->
+        <section id="result" class="hidden mt-8">
+          <div id="result-card" class="bg-white rounded-3xl border border-leaf-100 border-l-4 border-l-leaf-500 shadow-lg shadow-leaf-900/5 p-6 sm:p-8">
+            <div class="flex items-center gap-4">
+              <span id="result-icon" class="w-14 h-14 rounded-2xl flex items-center justify-center text-white text-lg font-bold shrink-0"></span>
+              <div>
+                <h3 id="result-label" class="font-display font-semibold text-2xl text-leaf-900 leading-tight">—</h3>
+                <p id="result-short" class="text-leaf-700/70 mt-0.5">—</p>
+              </div>
+            </div>
+
+            <div class="mt-6">
+              <div class="flex items-center justify-between text-sm text-leaf-700 mb-1.5">
+                <span class="font-medium">Confianza del modelo</span>
+                <span id="result-confidence" class="font-semibold text-leaf-900">0%</span>
+              </div>
+              <div class="h-2.5 bg-leaf-100 rounded-full overflow-hidden">
+                <div id="confidence-fill" class="confidence-fill h-full w-0 bg-leaf-600 rounded-full"></div>
+              </div>
+            </div>
+
+            <div id="probs" class="flex flex-wrap gap-2 mt-5"></div>
+
+            <div class="mt-6 bg-cream rounded-2xl p-5 border border-leaf-100">
+              <h4 class="font-semibold text-leaf-900 flex items-center gap-2">
+                <span class="text-accent-500">💡</span> Recomendación
+              </h4>
+              <p id="rec-detail" class="text-leaf-800 mt-2 leading-relaxed"></p>
+              <ul id="rec-actions" class="mt-3 space-y-1.5"></ul>
+            </div>
+
+            <button id="btn-export" class="mt-6 inline-flex items-center gap-2 bg-leaf-100 hover:bg-leaf-200 text-leaf-800 font-semibold px-5 py-2.5 rounded-full transition-colors">
+              <svg viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4"><path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z"/><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z"/></svg>
+              Descargar PDF
+            </button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- ===================== PANEL: HISTORIAL ===================== -->
+    <section class="tab-panel hidden mt-10" id="panel-history" role="tabpanel">
+      <div class="max-w-2xl mx-auto">
+        <h2 class="font-display font-semibold text-3xl text-leaf-900">Historial</h2>
+        <p class="text-leaf-700/80 mt-2">Tus diagnósticos recientes. Selecciona varios para exportarlos juntos en PDF.</p>
+
+        <div class="mt-6 flex flex-wrap gap-3">
+          <button id="btn-export-selected" class="inline-flex items-center gap-2 bg-leaf-600 hover:bg-leaf-700 text-white font-semibold px-5 py-2.5 rounded-full transition-colors disabled:opacity-50">Exportar seleccionados (PDF)</button>
+          <button id="btn-export-all" class="inline-flex items-center gap-2 bg-leaf-100 hover:bg-leaf-200 text-leaf-800 font-semibold px-5 py-2.5 rounded-full transition-colors disabled:opacity-50">Exportar todo</button>
+          <button id="btn-clear-history" class="inline-flex items-center gap-2 text-leaf-600 hover:text-leaf-800 font-semibold px-5 py-2.5 rounded-full transition-colors disabled:opacity-50">Limpiar historial</button>
+        </div>
+
+        <p id="history-empty" class="text-leaf-700/60 text-sm mt-6">Aún no hay predicciones.</p>
+        <ul id="history-list" class="mt-4 space-y-2"></ul>
+      </div>
+    </section>
+
+    <!-- ===================== PANEL: CÁMARA EN VIVO ===================== -->
+    <section class="tab-panel hidden mt-10" id="panel-camera" role="tabpanel">
+      <div class="max-w-2xl mx-auto">
+        <h2 class="font-display font-semibold text-3xl text-leaf-900">Cámara en vivo</h2>
+        <p class="text-leaf-700/80 mt-2">Enfoca una hoja y mira el diagnóstico en tiempo real.</p>
+
+        <div class="mt-6">
+          <div class="relative bg-leaf-950 rounded-2xl overflow-hidden aspect-[4/3] flex items-center justify-center">
+            <video id="video" autoplay playsinline muted class="w-full h-full object-cover"></video>
+            <canvas id="canvas" hidden></canvas>
+            <div id="camera-overlay" class="hidden absolute inset-0 flex flex-col items-center justify-end p-6 bg-gradient-to-t from-black/70 via-transparent to-transparent text-white"></div>
+          </div>
+          <div class="mt-4 flex items-center gap-4">
+            <button id="btn-camera" class="inline-flex items-center gap-2 bg-leaf-600 hover:bg-leaf-700 text-white font-semibold px-7 py-3 rounded-full shadow-lg shadow-leaf-600/20 transition-colors">
+              Iniciar cámara
+            </button>
+            <span id="camera-hint" class="hidden text-sm text-leaf-700/70">Enfoca una hoja de maíz para analizarla</span>
+          </div>
+        </div>
+
+        <!-- Resultado al detener la cámara -->
+        <div id="camera-result" class="hidden mt-6">
+          <div class="bg-white rounded-3xl border border-leaf-100 border-l-4 border-l-leaf-500 shadow-lg shadow-leaf-900/5 p-6">
+            <div class="flex items-center gap-4">
+              <span id="camera-result-icon" class="w-14 h-14 rounded-2xl flex items-center justify-center text-white text-lg font-bold shrink-0"></span>
+              <div>
+                <h3 id="camera-result-label" class="font-display font-semibold text-2xl text-leaf-900 leading-tight">—</h3>
+                <p id="camera-result-short" class="text-leaf-700/70 mt-0.5">—</p>
+              </div>
+            </div>
+
+            <div class="mt-4">
+              <div class="flex items-center justify-between text-sm text-leaf-700 mb-1.5">
+                <span class="font-medium">Confianza del modelo</span>
+                <span id="camera-result-confidence" class="font-semibold text-leaf-900">0%</span>
+              </div>
+              <div class="h-2.5 bg-leaf-100 rounded-full overflow-hidden">
+                <div id="camera-confidence-fill" class="confidence-fill h-full w-0 bg-leaf-600 rounded-full"></div>
+              </div>
+            </div>
+
+            <div class="mt-5 bg-cream rounded-2xl p-5 border border-leaf-100">
+              <h4 class="font-semibold text-leaf-900 flex items-center gap-2">
+                <span class="text-accent-500">💡</span> Recomendación
+              </h4>
+              <p id="camera-rec-detail" class="text-leaf-800 mt-2 leading-relaxed"></p>
+              <ul id="camera-rec-actions" class="mt-3 space-y-1.5"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===================== Pie ===================== -->
+  <footer class="border-t border-leaf-100 bg-white/60">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-sm text-leaf-700/60">
+      <span class="flex items-center gap-2">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-leaf-500">
+          <path d="M24 4C16 9 7 18 7 28a17 17 0 0 0 34 0C41 18 32 9 24 4Z" fill="currentColor"/>
+        </svg>
+        NutriLeaf · Proyecto de Inteligencia Artificial
+      </span>
+      <span>Identificación de deficiencias en el maíz</span>
+    </div>
+  </footer>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
