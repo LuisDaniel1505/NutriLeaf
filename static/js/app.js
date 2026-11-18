@@ -285,6 +285,7 @@ btnAnalyze.addEventListener("click", async () => {
 // ---------- Cámara en vivo ----------
 let stream = null;
 let frameTimer = null;
+let lastCameraResult = null; // Último diagnóstico para mostrar al detener la cámara.
 
 btnCamera.addEventListener("click", async () => {
   if (stream) {
@@ -300,6 +301,7 @@ btnCamera.addEventListener("click", async () => {
     cameraHint.classList.remove("hidden");
     cameraOverlay.classList.remove("hidden");
     btnCamera.textContent = "Detener cámara";
+    document.getElementById("camera-result").classList.add("hidden");
     startFrameLoop();
   } catch (err) {
     renderError(cameraErrorMessage(err));
@@ -318,6 +320,8 @@ function stopCamera() {
   btnCamera.textContent = "Iniciar cámara";
   cameraHint.classList.add("hidden");
   cameraOverlay.classList.add("hidden");
+  // Muestra el diagnóstico completo (con recomendación) del último frame.
+  if (lastCameraResult) renderCameraResult(lastCameraResult);
 }
 
 function cameraErrorMessage(err) {
@@ -355,6 +359,7 @@ function startFrameLoop() {
         if (!res.ok) throw new Error(data.detail || "Error");
       }
       renderCameraOverlay(data);
+      lastCameraResult = data;
     } catch (err) {
       cameraOverlay.innerHTML = `<span>⚠️ ${err.message}</span>`;
     }
@@ -368,6 +373,32 @@ function renderCameraOverlay(data) {
     <strong class="text-lg">${data.label_es}</strong>
     <span class="text-white/80 text-sm">${Math.round(data.confidence * 100)}% de confianza</span>
   `;
+}
+
+function renderCameraResult(data) {
+  const meta = CLASS_META[data.class] || { symbol: "?", badge: "bg-leaf-500" };
+  const pct = Math.round(data.confidence * 100);
+
+  const iconEl = document.getElementById("camera-result-icon");
+  iconEl.className = `w-14 h-14 rounded-2xl flex items-center justify-center text-white text-lg font-bold shrink-0 ${meta.badge}`;
+  iconEl.textContent = meta.symbol;
+
+  document.getElementById("camera-result-label").textContent = data.label_es;
+  document.getElementById("camera-result-short").textContent = data.recommendation.short || "";
+  document.getElementById("camera-result-confidence").textContent = pct + "%";
+  document.getElementById("camera-confidence-fill").style.width = pct + "%";
+
+  document.getElementById("camera-rec-detail").textContent = data.recommendation.detail || "";
+  const actionsEl = document.getElementById("camera-rec-actions");
+  actionsEl.innerHTML = "";
+  (data.recommendation.actions || []).forEach((a) => {
+    const li = document.createElement("li");
+    li.className = "flex gap-2 text-leaf-800";
+    li.innerHTML = `<span class="text-leaf-500">•</span><span>${a}</span>`;
+    actionsEl.appendChild(li);
+  });
+
+  document.getElementById("camera-result").classList.remove("hidden");
 }
 
 // ---------- Renderizado del resultado ----------
